@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+  Options +FollowSymlinks -Multiviews
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ index.php/$1 [QSA,PT,L]
+  #RewriteRule ^(.*).(js|css|png|jpg|jpeg)$ /application/plugins/optimizer/index/mtfBetter/mtfBetter.php?path=$1.$2 [L]
+  RewriteCond %{SERVER_PORT} !^443$
+ RewriteRule ^.*$ https://%{SERVER_NAME}%{REQUEST_URI} [L,R=301]
+</IfModule>

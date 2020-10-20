@@ -37,6 +37,6 @@ RewriteRule ^(.*).(js|css|png|jpg|jpeg)$ mtfBetter.php?{参数区}&path=$1.$2 [L
 - `path` - 静态文件相对于mtfBetter.php路径（开箱即用中，mtfBetter.php放到了根目录，默认就在根目录）  
 - `watermark_path` - 水印图片相对于mtfBetter.php的路径
 - `watermark_pos` - 水印图片的位置
-- `pic_anti_stealing_link` - 图片防盗链
+- `anti_stealing_link` - 图片防盗链
 - `cache_time` - 缓存时间
 - `task_num` - 队列数
