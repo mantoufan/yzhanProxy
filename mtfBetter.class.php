@@ -56,10 +56,18 @@ class mtfBetter
                 case 'png':
                 case 'gif':
                     // 防盗链
+                    if ($CONF['arv']['anti_stealing_link']) {
+                        $ar = explode(':', $_SERVER['HTTP_HOST']);
+                        $domain = $ar[0];
+                        if (!empty($_SERVER['HTTP_REFERER']) && stripos($_SERVER['HTTP_REFERER'], $domain) === false) {
+                            header('status: 403 Forbidden');
+                            die('403 Forbidden Powerer by mtfBetter');
+                        }
+                    }
                     
                     // 图片压缩
                     $_webp = '';
-                    if(strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
+                    if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
                         $this->taskManager(1, $_p);
                         $_webp = $this->webp($_p);
                         $this->taskManager(0);
@@ -85,15 +93,15 @@ class mtfBetter
                 mkdir($CONF['arv']['cache_dir']);
             }
             $_i = pathinfo($_p);
-            $_p = $CONF['arv']['cache_dir']. md5($_i['filename']) . '.' . $_i['extension'];
-            if (!file_exists($_p)) {
+            $_p_new = $CONF['arv']['cache_dir']. md5($_i['filename']) . '.' . $_i['extension'];
+            if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
                 $im = 'image' . $_i['extension'];
-                $im($image, $_p, $quality);
+                $im($image, $_p_new, $quality);
                 imagedestroy($image);
             }
-            return $_p;
+            return $_p_new;
         }
         return false;
     }
@@ -104,17 +112,17 @@ class mtfBetter
                 mkdir($CONF['arv']['cache_dir']);
             }
             $_i = pathinfo($_p);
-            $_p = $CONF['arv']['cache_dir']. md5($_i['filename']) .'.webp';
-            if (!file_exists($_p)) {
+            $_p_new = $CONF['arv']['cache_dir']. md5($_i['filename']) .'.webp';
+            if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 imagepalettetotruecolor($image);
                 imagealphablending($image, true);
                 imagesavealpha($image, true);
                 imagepalettetotruecolor($image);
-                imagewebp($image, $_p, 75);
+                imagewebp($image, $_p_new, 75);
                 imagedestroy($image);
             }
-            return $_p;
+            return $_p_new;
         }
         return false;
     }
