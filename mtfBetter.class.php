@@ -56,7 +56,7 @@ class mtfBetter
                 case 'png':
                 case 'gif':
                     // 防盗链
-                    if ($CONF['arv']['anti_stealing_link']) {
+                    if ($CONF['arv']['anti_stealing_link_pic']) {
                         $ar = explode(':', $_SERVER['HTTP_HOST']);
                         $domain = $ar[0];
                         if (!empty($_SERVER['HTTP_REFERER']) && stripos($_SERVER['HTTP_REFERER'], $domain) === false) {
