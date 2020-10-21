@@ -55,47 +55,66 @@ class mtfBetter
                 case 'jpg':
                 case 'png':
                 case 'gif':
-                    $this->taskManager(1, $_p);
-                    $_p = $this->webp($_p, md5($_i['basename']));
-                    $this->taskManager(0);
-                    if ($_p) {
-                        $this->contentType('webp');
-                    } else {
-                        $this->outPut($_p);
+                    // 防盗链
+                    
+                    // 图片压缩
+                    $_webp = '';
+                    if(strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
+                        $this->taskManager(1, $_p);
+                        $_webp = $this->webp($_p);
+                        $this->taskManager(0);
+                        if ($_webp) {
+                            $this->contentType('webp');
+                            $_p = $_webp;
+                        }
+                    }
+                    if (!$_webp) {
+                        $this->taskManager(1, $_p);
+                        $_p = $this->compressPic($_p);
+                        $this->taskManager(0);
                     }
                 default:
                     die(file_get_contents($_p));
             }
         }
     }
-    public function webp($_p, $filename) {
+    private function compressPic($_p) {
         if (file_exists($_p)) {
             $CONF = $this->CONF;
-            $image = imagecreatefromstring(file_get_contents($_p));
-            imagepalettetotruecolor($image);
-            imagealphablending($image, true);
-            imagesavealpha($image, true);
-    
             if (!is_dir($CONF['arv']['cache_dir'])) {
                 mkdir($CONF['arv']['cache_dir']);
             }
-            $this->cacheClear(5);
-            if(strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
-                $_b = true;
-                $_p = $CONF['arv']['cache_dir']. $filename .'.webp';
-                if (!file_exists($_p)) {
-                    try {
-                        imagepalettetotruecolor($image);
-                        $_b  = imagewebp($image, $_p, 75);
-                    } catch (\Exception $e) {
-                        $_b  = false;
-                    }
-                }
+            $_i = pathinfo($_p);
+            $_p = $CONF['arv']['cache_dir']. md5($_i['filename']) . '.' . $_i['extension'];
+            if (!file_exists($_p)) {
+                $image = imagecreatefromstring(file_get_contents($_p));
+                $quality = $_i['extension'] === 'png' ? 7 : 75;
+                $im = 'image' . $_i['extension'];
+                $im($image, $_p, $quality);
                 imagedestroy($image);
-                if ($_b) {
-                    return $_p;
-                }
             }
+            return $_p;
+        }
+        return false;
+    }
+    public function webp($_p) {
+        if (file_exists($_p)) {
+            $CONF = $this->CONF;
+            if (!is_dir($CONF['arv']['cache_dir'])) {
+                mkdir($CONF['arv']['cache_dir']);
+            }
+            $_i = pathinfo($_p);
+            $_p = $CONF['arv']['cache_dir']. md5($_i['filename']) .'.webp';
+            if (!file_exists($_p)) {
+                $image = imagecreatefromstring(file_get_contents($_p));
+                imagepalettetotruecolor($image);
+                imagealphablending($image, true);
+                imagesavealpha($image, true);
+                imagepalettetotruecolor($image);
+                imagewebp($image, $_p, 75);
+                imagedestroy($image);
+            }
+            return $_p;
         }
         return false;
     }
