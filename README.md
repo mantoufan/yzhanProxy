@@ -21,9 +21,6 @@ Heal the world, make it a better place.
 ## 协议
 本类隶属于[mtfCOM](https://github.com/mantoufan/mtfCOM)通用组件库，与之采用相同协议开源
 
-### 第三方授权
-[Minifier](https://github.com/marcocesarato/PHP-Minifier) GPL3.0
-
 ## 开箱即用
 1. [下载](https://github.com/mantoufan/mtfBetter/releases/)
 2. 解压到网站/应用根目录

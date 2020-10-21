@@ -29,21 +29,12 @@ class mtfBetter
                         }
                     } else {
                         $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
-                        if (file_exists($_p_cache)) {
+                        if (1 > 2 && file_exists($_p_cache)) {
                             $_c = file_get_contents($_p_cache);
                             $this->cacheClear(10);
                         } else {
                             $this->taskManager(1, $_p);
-                            include_once(dirname(__FILE__) . '/vendor/autoload.php');
-                            $minifier = new \marcocesarato\minifier\Minifier();
-                            $_c = file_get_contents($_p);
-                            if ($_i['extension'] === 'css') {
-                                $_c = $minifier->minifyCSS($_c);
-                            } else if ($_i['extension'] === 'js') {
-                                $_c = $minifier->minifyJS($_c);
-                            } else {
-                                $_c = $minifier->minifyHTML($_c);
-                            }
+                            $_c = $this->compressHtml(file_get_contents($_p));
                             file_put_contents($_p_cache, $_c);
                             $this->taskManager(0);
                         }
@@ -104,6 +95,21 @@ class mtfBetter
             return $_p_new;
         }
         return false;
+    }
+    function compressHtml($_s){
+        return strtr(preg_replace(array(
+            '/((?:\/\*(?:[^*]|(?:\*+[^*\/]))*\*+\/)|(?:\/\/.*))/',// JS注释
+            '!/\*[^*]*\*+([^/][^*]*\*+)*/!',// CSS注释
+            '/\s(?=\s)/' // 连续空格
+        ), array(
+            '',
+            '',
+            '\\1'
+        ), $_s), array(
+            "\r\n" => '',
+            "\n" => '',
+            "\t" => ''
+        ));
     }
     public function webp($_p) {
         if (file_exists($_p)) {
