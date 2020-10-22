@@ -28,8 +28,9 @@ class mtfBetter
                             header('Location: ' . $CONF['static'][$_i['basename']]);
                         }
                     } else {
+                        $this->checkCacheDir();
                         $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
-                        if (1 > 2 && file_exists($_p_cache)) {
+                        if (file_exists($_p_cache)) {
                             $_c = file_get_contents($_p_cache);
                             $this->cacheClear(10);
                         } else {
@@ -81,14 +82,18 @@ class mtfBetter
             }
         }
     }
+    private function checkCacheDir() {
+        $CONF = $this->CONF;
+        if (!is_dir($CONF['arv']['cache_dir'])) {
+            mkdir($CONF['arv']['cache_dir']);
+        }
+    }
     private function compressPic($_p) {
         if (file_exists($_p)) {
             $CONF = $this->CONF;
-            if (!is_dir($CONF['arv']['cache_dir'])) {
-                mkdir($CONF['arv']['cache_dir']);
-            }
+            $this->checkCacheDir();
             $_i = pathinfo($_p);
-            $_p_new = $CONF['arv']['cache_dir']. md5($_i['filename']) . '.' . $_i['extension'];
+            $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
             if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
@@ -101,6 +106,7 @@ class mtfBetter
         return false;
     }
     function gzip($_s) {
+        return $_s;
         header('Content-Encoding: gzip');
         return gzencode($_s);
     }
@@ -116,11 +122,9 @@ class mtfBetter
     public function webp($_p) {
         if (file_exists($_p)) {
             $CONF = $this->CONF;
-            if (!is_dir($CONF['arv']['cache_dir'])) {
-                mkdir($CONF['arv']['cache_dir']);
-            }
+            $this->checkCacheDir();
             $_i = pathinfo($_p);
-            $_p_new = $CONF['arv']['cache_dir']. md5($_i['filename']) .'.webp';
+            $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
             if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 imagepalettetotruecolor($image);

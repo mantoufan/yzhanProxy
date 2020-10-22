@@ -6,9 +6,8 @@ return array(
         'amazeui.chosen.css' => '',
         'cropper.min.css' => '',
         'amazeui.tagsinput.css' => '',
-        'jquery-2.1.0.js' => 'https://cdn.jsdelivr.net/combine/npm/jquery@2.1.0,npm/amazeui@2.7.2/dist/js/amazeui.min.js,npm/echarts@4.1.0/dist/echarts.min.js,npm/echarts@4.1.0/theme/macarons.min.js,npm/amazeui-switch@3.3.3,npm/amazeui-chosen@1.3.0,npm/amazeui-dialog@0.0.2,npm/amazeui-tagsinput@0.5.2,npm/cropper@0.9.2,npm/clipboard@2.0.4,npm/my-ueditor@0.1.2/ueditor.all.min.js,npm/my97datepicker@4.8.0',
+        'jquery-2.1.0.js' => 'https://cdn.jsdelivr.net/combine/npm/jquery@2.1.0,npm/amazeui@2.7.2/dist/js/amazeui.min.js,npm/echarts@4.1.0/dist/echarts.min.js,npm/echarts@4.1.0/theme/macarons.min.js,npm/amazeui-switch@3.3.3,npm/amazeui-chosen@1.3.0,npm/amazeui-dialog@0.0.2/dist/amazeui.dialog.min.js,npm/amazeui-tagsinput@0.5.2,npm/cropper@0.9.2,npm/clipboard@2.0.4,npm/my-ueditor@0.1.2/ueditor.all.min.js,npm/my97datepicker@4.8.0',
         'amazeui.min.js' => '', // 返回空
-        'jquery.imagezoom.min.js' => '',
         'echarts.min.js' => '',
         'macarons.js'=> '',
         'amazeui.switch.min.js',
