@@ -23,9 +23,9 @@ class mtfBetter
                 case 'css':
                 case 'js':
                 case 'html':
-                    if (isset($CONF['js'][$_i['basename']])) {
-                        if (!empty($CONF['js'][$_i['basename']])) {
-                            header('Location: ' . $CONF['js'][$_i['basename']]);
+                    if (isset($CONF['static'][$_i['basename']])) {
+                        if (!empty($CONF['static'][$_i['basename']])) {
+                            header('Location: ' . $CONF['static'][$_i['basename']]);
                         }
                     } else {
                         $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
@@ -34,7 +34,11 @@ class mtfBetter
                             $this->cacheClear(10);
                         } else {
                             $this->taskManager(1, $_p);
-                            $_c = $this->compressHtml(file_get_contents($_p));
+                            if ($_i['extension'] === 'js') {
+                                $_c = $this->gzip(file_get_contents($_p));
+                            } else {
+                                $_c = $this->gzip($this->compressHtml(file_get_contents($_p)));
+                            }
                             file_put_contents($_p_cache, $_c);
                             $this->taskManager(0);
                         }
@@ -96,20 +100,18 @@ class mtfBetter
         }
         return false;
     }
+    function gzip($_s) {
+        header('Content-Encoding: gzip');
+        return gzencode($_s);
+    }
     function compressHtml($_s){
-        return strtr(preg_replace(array(
-            '/((?:\/\*(?:[^*]|(?:\*+[^*\/]))*\*+\/)|(?:\/\/.*))/',// JS注释
+        return preg_replace(array(
             '!/\*[^*]*\*+([^/][^*]*\*+)*/!',// CSS注释
-            '/\s(?=\s)/' // 连续空格
+            '/\s(?=\s)/'
         ), array(
             '',
-            '',
             '\\1'
-        ), $_s), array(
-            "\r\n" => '',
-            "\n" => '',
-            "\t" => ''
-        ));
+        ), $_s);
     }
     public function webp($_p) {
         if (file_exists($_p)) {
