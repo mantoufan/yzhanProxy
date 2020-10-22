@@ -32,7 +32,6 @@ class mtfBetter
                         $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
                         if (file_exists($_p_cache)) {
                             $_c = file_get_contents($_p_cache);
-                            $this->cacheClear(10);
                         } else {
                             $this->taskManager(1, $_p);
                             if ($_i['extension'] === 'js') {
@@ -61,7 +60,7 @@ class mtfBetter
                         }
                     }
                     
-                    // 图片压缩
+                    // 图片压缩 + 水印
                     $_webp = '';
                     if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
                         $this->taskManager(1, $_p);
@@ -78,6 +77,7 @@ class mtfBetter
                         $this->taskManager(0);
                     }
                 default:
+                    $this->cacheClear(5);
                     die(file_get_contents($_p));
             }
         }
@@ -88,6 +88,37 @@ class mtfBetter
             mkdir($CONF['arv']['cache_dir']);
         }
     }
+    private function water($image) {
+        // 图片水印
+        $CONF = $this->CONF;
+        if ($CONF['arv']['watermark_pos'] && $CONF['arv']['watermark_path']) {
+            $water = imagecreatefromstring(file_get_contents($CONF['arv']['watermark_path']));
+            list($image_w, $image_h) = getimagesize($image);
+            list($water_w, $water_h) = getimagesize($water);
+            $pad = 10;
+            switch ($CONF['arv']['watermark_pos']) {
+                case 'left-top':
+                    $x = $pad;
+                    $y = $pad;
+                break;
+                case 'left-bottom':
+                    $x = $pad;
+                    $y = $image_h - $water_h - $pad;
+                break;
+                case 'right-top':
+                    $x = $image_w - $water_w - $pad;
+                    $y = $pad;
+                break;
+                case 'right-bottom':
+                    $x = $image_w - $water_w - $pad;
+                    $y = $image_h - $water_h - $pad;
+                break;
+            }
+            imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, 30);
+            imagedestroy($water);
+        }
+        return $image;
+    }
     private function compressPic($_p) {
         if (file_exists($_p)) {
             $CONF = $this->CONF;
@@ -96,6 +127,7 @@ class mtfBetter
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
             if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
+                $image = $this->water($image);
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
                 $im = 'image' . $_i['extension'];
                 $im($image, $_p_new, $quality);
@@ -131,6 +163,7 @@ class mtfBetter
                 imagealphablending($image, true);
                 imagesavealpha($image, true);
                 imagepalettetotruecolor($image);
+                $image = $this->water($image);
                 imagewebp($image, $_p_new, 75);
                 imagedestroy($image);
             }
