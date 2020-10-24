@@ -26,6 +26,7 @@ return array(
         'task_num' => 8, // 最大任务数
         'watermark_path' => '', // 水印路径
         'watermark_pos' => '', // 水印位置
+        'watermark_opacity' => 30, // 水印不透明度
         'anti_stealing_link_pic' => false, // 防盗链图片
     )
 );

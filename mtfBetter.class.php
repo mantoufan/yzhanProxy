@@ -93,8 +93,11 @@ class mtfBetter
         $CONF = $this->CONF;
         if ($CONF['arv']['watermark_pos'] && $CONF['arv']['watermark_path']) {
             $water = imagecreatefromstring(file_get_contents($CONF['arv']['watermark_path']));
-            list($image_w, $image_h) = getimagesize($image);
-            list($water_w, $water_h) = getimagesize($water);
+            $image_w = imagesx($image);
+            $image_h = imagesy($image);
+            $water_w = imagesx($water);
+            $water_h = imagesy($water);
+            if ($image_w < $water_w * 3 || $image_h < $water_h * 3) return $image;
             $pad = 10;
             switch ($CONF['arv']['watermark_pos']) {
                 case 'left-top':
@@ -114,7 +117,7 @@ class mtfBetter
                     $y = $image_h - $water_h - $pad;
                 break;
             }
-            imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, 30);
+            imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, $CONF['arv']['watermark_opacity']);
             imagedestroy($water);
         }
         return $image;
@@ -157,7 +160,7 @@ class mtfBetter
             $this->checkCacheDir();
             $_i = pathinfo($_p);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
-            if (!file_exists($_p_new)) {
+            if (2 > 1 || !file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 imagepalettetotruecolor($image);
                 imagealphablending($image, true);
@@ -216,13 +219,14 @@ class mtfBetter
     private function taskManager($add, $_p = '') {
         $CONF = $this->CONF;
         $_task_num = !empty($_SESSION['mtfBetter_task_num']) ? $_SESSION['mtfBetter_task_num'] : 0;
+        if ($_task_num < 0 || isset($_SESSION['mtfBetter_task_time']) && time() - $_SESSION['mtfBetter_task_time'] > 10) {
+            unset($_SESSION['mtfBetter_task_num'], $_SESSION['mtfBetter_task_time']);
+        }
         if ($_task_num > $CONF['arv']['task_num']) {
             if ($_p) $this->outPut($_p);
         } else {
             $_SESSION['mtfBetter_task_num'] = $add ? ++$_task_num : --$_task_num;
-        }
-        if ($_task_num < 0) {
-            unset($_SESSION['mtfBetter_task_num']);
+            $_SESSION['mtfBetter_task_time'] = time();
         }
     }
 }
