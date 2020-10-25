@@ -39,9 +39,9 @@ class mtfBetter
                             } else {
                                 $this->taskManager(1, $_p);
                                 if ($_i['extension'] === 'js') {
-                                    file_put_contents($_p_cache, $this->gzip(file_get_contents($_p)));
+                                    copy($_p_cache, $_p);
                                 } else {
-                                    file_put_contents($_p_cache, $this->gzip($this->compressHtml(file_get_contents($_p))));
+                                    file_put_contents($_p_cache, $this->compressHtml(file_get_contents($_p)));
                                 }
                                 $_p = $_p_cache;
                                 $this->taskManager(0);
@@ -49,6 +49,7 @@ class mtfBetter
                         }
                     }
                     $this->contentType($_i['extension']);
+                    $this->gzip();
                     readfile($_p);
                 break;
                 case 'jpeg':
@@ -153,19 +154,18 @@ class mtfBetter
         }
         return false;
     }
-    function gzip($_s) {
-        return $_s;
-        header('Content-Encoding: gzip');
-        return gzencode($_s);
+    function gzip() {
+        if(!headers_sent() && extension_loaded("zlib") && strstr($_SERVER["HTTP_ACCEPT_ENCODING"],"gzip")) {
+            ini_set('zlib.output_compression', 'On');
+            ini_set('zlib.output_compression_level', '5');
+        }
     }
     function compressHtml($_s){
-        return preg_replace(array(
+        return str_replace(': ', ':', str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', preg_replace(array(
             '!/\*[^*]*\*+([^/][^*]*\*+)*/!',// CSS注释
-            '/\s(?=\s)/'
         ), array(
-            '',
-            '\\1'
-        ), $_s);
+            ''
+        ), $_s)));
     }
     private function savealpha($image) {
         imagepalettetotruecolor($image);
