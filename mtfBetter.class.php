@@ -28,26 +28,28 @@ class mtfBetter
                         if (isset($CONF['static'][$_i['basename']])) {
                             if (!empty($CONF['static'][$_i['basename']])) {
                                 header('Location: ' . $CONF['static'][$_i['basename']]);
+                            } else {
+                                die();
                             }
                         } else {
                             $this->checkCacheDir();
                             $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
                             if (file_exists($_p_cache)) {
-                                $_c = file_get_contents($_p_cache);
+                                $_p = $_p_cache;
                             } else {
                                 $this->taskManager(1, $_p);
                                 if ($_i['extension'] === 'js') {
-                                    $_c = $this->gzip(file_get_contents($_p));
+                                    file_put_contents($_p_cache, $this->gzip(file_get_contents($_p)));
                                 } else {
-                                    $_c = $this->gzip($this->compressHtml(file_get_contents($_p)));
+                                    file_put_contents($_p_cache, $this->gzip($this->compressHtml(file_get_contents($_p))));
                                 }
-                                file_put_contents($_p_cache, $_c);
+                                $_p = $_p_cache;
                                 $this->taskManager(0);
                             }
                         }
                     }
                     $this->contentType($_i['extension']);
-                    die($_c);
+                    readfile($_p);
                 break;
                 case 'jpeg':
                 case 'jpg':
@@ -84,7 +86,7 @@ class mtfBetter
                     }
                 default:
                     $this->cacheClear(5);
-                    die(file_get_contents($_p));
+                    readfile($_p);
             }
         }
     }
@@ -143,7 +145,7 @@ class mtfBetter
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
-                $im = 'image' . $_i['extension'] === 'jpg' ? 'jpeg' : $_i['extension'];
+                $im = 'image' . ($_i['extension'] === 'jpg' ? 'jpeg' : $_i['extension']);
                 $im($image, $_p_new, $quality);
                 imagedestroy($image);
             }

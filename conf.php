@@ -10,14 +10,14 @@ return array(
         'amazeui.min.js' => '', // 返回空
         'echarts.min.js' => '',
         'macarons.js'=> '',
-        'amazeui.switch.min.js',
-        'amazeui.chosen.min.js',
-        'amazeui.dialog.js',
-        'amazeui.tagsinput.min.js',
-        'cropper.min.js',
-        'clipboard.min.js',
-        'ueditor.all.js',
-        'WdatePicker.js'
+        'amazeui.switch.min.js'=> '',
+        'amazeui.chosen.min.js'=> '',
+        'amazeui.dialog.js'=> '',
+        'amazeui.tagsinput.min.js'=> '',
+        'cropper.min.js'=> '',
+        'clipboard.min.js'=> '',
+        'ueditor.all.js'=> '',
+        'WdatePicker.js'=> '',
     ),
     'arv' => array( // 可以通过传参，动态改变的参数
         'path' => '', // 文件路径
