@@ -92,33 +92,35 @@ class mtfBetter
         // 图片水印
         $CONF = $this->CONF;
         if ($CONF['arv']['watermark_pos'] && $CONF['arv']['watermark_path']) {
-            $water = imagecreatefromstring(file_get_contents($CONF['arv']['watermark_path']));
-            $image_w = imagesx($image);
-            $image_h = imagesy($image);
-            $water_w = imagesx($water);
-            $water_h = imagesy($water);
-            if ($image_w < $water_w * 3 || $image_h < $water_h * 3) return $image;
-            $pad = 10;
-            switch ($CONF['arv']['watermark_pos']) {
-                case 'left-top':
-                    $x = $pad;
-                    $y = $pad;
-                break;
-                case 'left-bottom':
-                    $x = $pad;
-                    $y = $image_h - $water_h - $pad;
-                break;
-                case 'right-top':
-                    $x = $image_w - $water_w - $pad;
-                    $y = $pad;
-                break;
-                case 'right-bottom':
-                    $x = $image_w - $water_w - $pad;
-                    $y = $image_h - $water_h - $pad;
-                break;
+            if (file_exists($CONF['arv']['watermark_path'])) {
+                $water = imagecreatefromstring(file_get_contents($CONF['arv']['watermark_path']));
+                $image_w = imagesx($image);
+                $image_h = imagesy($image);
+                $water_w = imagesx($water);
+                $water_h = imagesy($water);
+                if ($image_w < $water_w * 3 || $image_h < $water_h * 3) return $image;
+                $pad = 10;
+                switch ($CONF['arv']['watermark_pos']) {
+                    case 'left-top':
+                        $x = $pad;
+                        $y = $pad;
+                    break;
+                    case 'left-bottom':
+                        $x = $pad;
+                        $y = $image_h - $water_h - $pad;
+                    break;
+                    case 'right-top':
+                        $x = $image_w - $water_w - $pad;
+                        $y = $pad;
+                    break;
+                    case 'right-bottom':
+                        $x = $image_w - $water_w - $pad;
+                        $y = $image_h - $water_h - $pad;
+                    break;
+                }
+                imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, $CONF['arv']['watermark_opacity']);
+                imagedestroy($water);
             }
-            imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, $CONF['arv']['watermark_opacity']);
-            imagedestroy($water);
         }
         return $image;
     }
