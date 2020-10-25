@@ -19,32 +19,35 @@ class mtfBetter
         $_p = $CONF['arv']['path'];
         if (file_exists($_p)) {
             $_i = pathinfo($_p);
+            $_i['extension'] = strtolower($_i['extension']);
             switch ($_i['extension']) {
                 case 'css':
                 case 'js':
                 case 'html':
-                    if (isset($CONF['static'][$_i['basename']])) {
-                        if (!empty($CONF['static'][$_i['basename']])) {
-                            header('Location: ' . $CONF['static'][$_i['basename']]);
-                        }
-                    } else {
-                        $this->checkCacheDir();
-                        $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
-                        if (file_exists($_p_cache)) {
-                            $_c = file_get_contents($_p_cache);
-                        } else {
-                            $this->taskManager(1, $_p);
-                            if ($_i['extension'] === 'js') {
-                                $_c = $this->gzip(file_get_contents($_p));
-                            } else {
-                                $_c = $this->gzip($this->compressHtml(file_get_contents($_p)));
+                    if (!empty($CONF['arv']['available_static'])) {
+                        if (isset($CONF['static'][$_i['basename']])) {
+                            if (!empty($CONF['static'][$_i['basename']])) {
+                                header('Location: ' . $CONF['static'][$_i['basename']]);
                             }
-                            file_put_contents($_p_cache, $_c);
-                            $this->taskManager(0);
+                        } else {
+                            $this->checkCacheDir();
+                            $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
+                            if (file_exists($_p_cache)) {
+                                $_c = file_get_contents($_p_cache);
+                            } else {
+                                $this->taskManager(1, $_p);
+                                if ($_i['extension'] === 'js') {
+                                    $_c = $this->gzip(file_get_contents($_p));
+                                } else {
+                                    $_c = $this->gzip($this->compressHtml(file_get_contents($_p)));
+                                }
+                                file_put_contents($_p_cache, $_c);
+                                $this->taskManager(0);
+                            }
                         }
-                        $this->contentType($_i['extension']);
-                        die($_c);
                     }
+                    $this->contentType($_i['extension']);
+                    die($_c);
                 break;
                 case 'jpeg':
                 case 'jpg':
@@ -62,18 +65,21 @@ class mtfBetter
                     
                     // 图片压缩 + 水印
                     $_webp = '';
-                    if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
-                        $this->taskManager(1, $_p);
-                        $_webp = $this->webp($_p);
-                        $this->taskManager(0);
-                        if ($_webp) {
-                            $this->contentType('webp');
-                            $_p = $_webp;
+                    if (!empty($CONF['arv']['available_pic'])) {
+                        if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
+                            $this->taskManager(1, $_p);
+                            $_webp = $this->webp($_p);
+                            $this->taskManager(0);
+                            if ($_webp) {
+                                $this->contentType('webp');
+                                $_p = $_webp;
+                            }
                         }
-                    }
+                    } 
                     if (!$_webp) {
                         $this->taskManager(1, $_p);
                         $_p = $this->compressPic($_p);
+                        $this->contentType($_i['extension']);
                         $this->taskManager(0);
                     }
                 default:
@@ -130,13 +136,14 @@ class mtfBetter
             $CONF = $this->CONF;
             $this->checkCacheDir();
             $_i = pathinfo($_p);
+            $_i['extension'] = strtolower($_i['extension']);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
             if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
-                $im = 'image' . $_i['extension'];
+                $im = 'image' . $_i['extension'] === 'jpg' ? 'jpeg' : $_i['extension'];
                 $im($image, $_p_new, $quality);
                 imagedestroy($image);
             }
@@ -184,6 +191,7 @@ class mtfBetter
     }
     private function outPut($_p) {
         $_i = pathinfo($_p);
+        $_i['extension'] = strtolower($_i['extension']);
         $this->contentType($_i['extension']);
         die(file_get_contents($_p));
     }
