@@ -98,7 +98,7 @@ class mtfBetter
                 $image_h = imagesy($image);
                 $water_w = imagesx($water);
                 $water_h = imagesy($water);
-                if ($image_w < $water_w * 3 || $image_h < $water_h * 3) return $image;
+                if ($image_w < $water_w * 5 || $image_h < $water_h * 5) return $image;
                 $pad = 10;
                 switch ($CONF['arv']['watermark_pos']) {
                     case 'left-top':
@@ -118,7 +118,8 @@ class mtfBetter
                         $y = $image_h - $water_h - $pad;
                     break;
                 }
-                imagecopymerge($image, $water, $x, $y, 0, 0, $water_w, $water_h, $CONF['arv']['watermark_opacity']);
+                $water = $this->savealpha($water);
+                imagecopy($image, $water, $x, $y, 0, 0, $water_w, $water_h);
                 imagedestroy($water);
             }
         }
@@ -132,6 +133,7 @@ class mtfBetter
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
             if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
+                $image = $this->savealpha($image);
                 $image = $this->water($image);
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
                 $im = 'image' . $_i['extension'];
@@ -156,6 +158,13 @@ class mtfBetter
             '\\1'
         ), $_s);
     }
+    private function savealpha($image) {
+        imagepalettetotruecolor($image);
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+        imagepalettetotruecolor($image);
+        return $image;
+    }
     public function webp($_p) {
         if (file_exists($_p)) {
             $CONF = $this->CONF;
@@ -164,10 +173,7 @@ class mtfBetter
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
             if (2 > 1 || !file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
-                imagepalettetotruecolor($image);
-                imagealphablending($image, true);
-                imagesavealpha($image, true);
-                imagepalettetotruecolor($image);
+                $image = $this->savealpha($image);
                 $image = $this->water($image);
                 imagewebp($image, $_p_new, 75);
                 imagedestroy($image);
