@@ -16,7 +16,6 @@ return array(
         'amazeui.tagsinput.min.js'=> '',
         'cropper.min.js'=> '',
         'clipboard.min.js'=> '',
-        'ueditor.all.js'=> 'https://cdn.jsdelivr.net/npm/my-ueditor@0.1.2/ueditor.all.min.js',
         'WdatePicker.js'=> 'https://cdn.jsdelivr.net/npm/my97datepicker@4.8.0/WdatePicker.min.js',
     ),
     'arv' => array( // 可以通过传参，动态改变的参数

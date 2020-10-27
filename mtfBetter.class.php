@@ -39,7 +39,7 @@ class mtfBetter
                             } else {
                                 $this->taskManager(1, $_p);
                                 if ($_i['extension'] === 'js') {
-                                    copy($_p_cache, $_p);
+                                    copy($_p, $_p_cache);
                                 } else {
                                     file_put_contents($_p_cache, $this->compressHtml(file_get_contents($_p)));
                                 }
@@ -161,7 +161,7 @@ class mtfBetter
         }
     }
     function compressHtml($_s){
-        return str_replace(': ', ':', str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', preg_replace(array(
+        return str_replace(': ', ':', str_replace(array("\r\n", "\r", "\n", "\t", '    ', '    '), '', preg_replace(array(
             '!/\*[^*]*\*+([^/][^*]*\*+)*/!',// CSS注释
         ), array(
             ''
@@ -180,7 +180,7 @@ class mtfBetter
             $this->checkCacheDir();
             $_i = pathinfo($_p);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
-            if (2 > 1 || !file_exists($_p_new)) {
+            if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
