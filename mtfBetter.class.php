@@ -184,7 +184,7 @@ class mtfBetter
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
-                imagewebp($image, $_p_new, 75);
+                imagewebp($image, $_p_new, 70);
                 imagedestroy($image);
             }
             return $_p_new;
