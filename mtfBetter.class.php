@@ -4,7 +4,7 @@ class mtfBetter
     public $CONF;
     public function __construct($arv = array())
     {
-        session_start();
+        if (!session_id()) session_start();
 		$CONF = include dirname(__FILE__) . '/conf.php';
         forEach ($CONF['arv'] as $k => $v) {
             if (!empty($arv[$k])) {
@@ -51,6 +51,7 @@ class mtfBetter
                     $this->contentType($_i['extension']);
                     $this->gzip();
                     readfile($_p);
+                    exit;
                 break;
                 case 'jpeg':
                 case 'jpg':
@@ -65,7 +66,6 @@ class mtfBetter
                             die('403 Forbidden Powerer by mtfBetter');
                         }
                     }
-                    
                     // 图片压缩 + 水印
                     $_webp = '';
                     if (!empty($CONF['arv']['available_pic'])) {
@@ -88,6 +88,7 @@ class mtfBetter
                 default:
                     $this->cacheClear(5);
                     readfile($_p);
+                    exit;
             }
         }
     }
