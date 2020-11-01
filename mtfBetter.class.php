@@ -69,14 +69,17 @@ class mtfBetter
                     // 图片压缩 + 水印
                     $_webp = '';
                     if (!empty($CONF['arv']['available_pic'])) {
-                        if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false && $_i['extension'] !== 'png') {
-                            $this->taskManager(1, $_p);
-                            $_webp = $this->webp($_p);
-                            $this->taskManager(0);
-                            if ($_webp) {
-                                $this->contentType('webp');
-                                $_p = $_webp;
-                            }
+                        if(strpos($_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) {
+                            // 非PNG 或 PNG且PHP版本大于7.0.0 转Webp
+                            if ($_i['extension'] !== 'png' || version_compare(PHP_VERSION, '7.0.0') === 1) {
+                                $this->taskManager(1, $_p);
+                                $_webp = $this->webp($_p);
+                                $this->taskManager(0);
+                                if ($_webp) {
+                                    $this->contentType('webp');
+                                    $_p = $_webp;
+                                }
+                            }        
                         }
                     } 
                     if (!$_webp) {
@@ -142,7 +145,7 @@ class mtfBetter
             $_i = pathinfo($_p);
             $_i['extension'] = strtolower($_i['extension']);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
-            if (2 > 1 || !file_exists($_p_new)) {
+            if (!file_exists($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
