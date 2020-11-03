@@ -161,7 +161,7 @@ class mtfBetter
     function gzip() {
         if(!headers_sent() && extension_loaded("zlib") && strstr($_SERVER["HTTP_ACCEPT_ENCODING"],"gzip")) {
             ini_set('zlib.output_compression', 'On');
-            ini_set('zlib.output_compression_level', '5');
+            ini_set('zlib.output_compression_level', '2');
         }
     }
     function compressHtml($_s){
