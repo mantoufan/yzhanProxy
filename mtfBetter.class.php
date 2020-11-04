@@ -11,13 +11,16 @@ class mtfBetter
                 $CONF['arv'][$k] = $arv[$k];
             }
         }
+        if (!is_dir($CONF['arv']['cache_dir'])) {
+            mkdir($CONF['arv']['cache_dir']);
+        }
         $this->CONF = $CONF;
     }
     
     public function handler() {        
         $CONF = $this->CONF;
         $_p = $CONF['arv']['path'];
-        if (file_exists($_p)) {
+        if (is_file($_p)) {
             $_i = pathinfo($_p);
             $_i['extension'] = strtolower($_i['extension']);
             switch ($_i['extension']) {
@@ -32,9 +35,8 @@ class mtfBetter
                                 die();
                             }
                         } else {
-                            $this->checkCacheDir();
                             $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
-                            if (file_exists($_p_cache)) {
+                            if (is_file($_p_cache)) {
                                 $_p = $_p_cache;
                             } else {
                                 $this->taskManager(1, $_p);
@@ -50,7 +52,7 @@ class mtfBetter
                     }
                     $this->contentType($_i['extension']);
                     $this->gzip();
-                    readfile($_p);
+                    $this->readTheFile($_p);
                     exit;
                 break;
                 case 'jpeg':
@@ -89,23 +91,17 @@ class mtfBetter
                         $this->taskManager(0);
                     }
                 default:
-                    $this->cacheClear(5);
-                    readfile($_p);
+                    $this->cacheClear(1);
+                    $this->readTheFile($_p);
                     exit;
             }
-        }
-    }
-    private function checkCacheDir() {
-        $CONF = $this->CONF;
-        if (!is_dir($CONF['arv']['cache_dir'])) {
-            mkdir($CONF['arv']['cache_dir']);
         }
     }
     private function water($image) {
         // 图片水印
         $CONF = $this->CONF;
         if ($CONF['arv']['watermark_pos'] && $CONF['arv']['watermark_path']) {
-            if (file_exists($CONF['arv']['watermark_path'])) {
+            if (is_file($CONF['arv']['watermark_path'])) {
                 $water = imagecreatefromstring(file_get_contents($CONF['arv']['watermark_path']));
                 $image_w = imagesx($image);
                 $image_h = imagesy($image);
@@ -139,13 +135,12 @@ class mtfBetter
         return $image;
     }
     private function compressPic($_p) {
-        if (file_exists($_p)) {
+        if (is_file($_p)) {
             $CONF = $this->CONF;
-            $this->checkCacheDir();
             $_i = pathinfo($_p);
             $_i['extension'] = strtolower($_i['extension']);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
-            if (!file_exists($_p_new)) {
+            if (!is_file($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
@@ -179,12 +174,11 @@ class mtfBetter
         return $image;
     }
     public function webp($_p) {
-        if (file_exists($_p)) {
+        if (is_file($_p)) {
             $CONF = $this->CONF;
-            $this->checkCacheDir();
             $_i = pathinfo($_p);
             $_p_new = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
-            if (!file_exists($_p_new)) {
+            if (!is_file($_p_new)) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
@@ -199,11 +193,12 @@ class mtfBetter
         $_i = pathinfo($_p);
         $_i['extension'] = strtolower($_i['extension']);
         $this->contentType($_i['extension']);
-        die(file_get_contents($_p));
+        $this->readTheFile($_p);
+        die();
     }
     private function cacheClear($rand) {
-        $CONF = $this->CONF;
         if (rand(0, 100) > $rand) return;
+        $CONF = $this->CONF;
         if (is_dir($CONF['arv']['cache_dir'])) {
             forEach(glob($CONF['arv']['cache_dir'] . '*.*') as $file) {
                 if (time() - filectime($file) > $CONF['arv']['cache_time']) {
@@ -250,6 +245,13 @@ class mtfBetter
             $_SESSION['mtfBetter_task_num'] = $add ? ++$_task_num : --$_task_num;
             $_SESSION['mtfBetter_task_time'] = time();
         }
+    }
+    private function readTheFile($path) {
+        $file = new SplFileObject($path);
+        while (!$file->eof()) {
+            echo $file->fgets();
+        }
+        $file = null;
     }
 }
 ?>
