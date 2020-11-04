@@ -93,7 +93,6 @@ class mtfBetter
                 default:
                     $this->cacheClear(1);
                     $this->readTheFile($_p);
-                    exit;
             }
         }
     }
@@ -107,7 +106,7 @@ class mtfBetter
                 $image_h = imagesy($image);
                 $water_w = imagesx($water);
                 $water_h = imagesy($water);
-                if ($image_w < $water_w * 5 || $image_h < $water_h * 5) return $image;
+                if ($image_w < $water_w * 3 || $image_h < $water_h * 3) return $image;
                 $pad = 10;
                 switch ($CONF['arv']['watermark_pos']) {
                     case 'left-top':
@@ -194,7 +193,6 @@ class mtfBetter
         $_i['extension'] = strtolower($_i['extension']);
         $this->contentType($_i['extension']);
         $this->readTheFile($_p);
-        die();
     }
     private function cacheClear($rand) {
         if (rand(0, 100) > $rand) return;
@@ -252,6 +250,7 @@ class mtfBetter
             echo $file->fgets();
         }
         $file = null;
+        die();
     }
 }
 ?>
