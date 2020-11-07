@@ -59,15 +59,6 @@ class mtfBetter
                 case 'jpg':
                 case 'png':
                 case 'gif':
-                    // 防盗链
-                    if ($CONF['arv']['anti_stealing_link_pic']) {
-                        $ar = explode(':', $_SERVER['HTTP_HOST']);
-                        $domain = $ar[0];
-                        if (!empty($_SERVER['HTTP_REFERER']) && stripos($_SERVER['HTTP_REFERER'], $domain) === false) {
-                            header('status: 403 Forbidden');
-                            die('403 Forbidden Powerer by mtfBetter');
-                        }
-                    }
                     // 图片压缩 + 水印
                     $_webp = '';
                     if (!empty($CONF['arv']['available_pic'])) {
