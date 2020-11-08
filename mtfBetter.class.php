@@ -32,7 +32,7 @@ class mtfBetter
                             if (!empty($CONF['static'][$_i['basename']])) {
                                 header('Location: ' . $CONF['static'][$_i['basename']]);
                             } else {
-                                die();
+                                die(); 
                             }
                         } else {
                             $_p_cache = $CONF['arv']['cache_dir']. md5($_i['dirname'] . '/' . $_i['basename']) . '.' . $_i['extension'];
@@ -50,9 +50,9 @@ class mtfBetter
                             }
                         }
                     }
-                    $this->contentType($_i['extension']);
-                    $this->gzip();
-                    $this->readTheFile($_p);
+                    //$this->contentType($_i['extension']);
+                    //$this->gzip();
+                    //$this->readTheFile($_p);
                     exit;
                 break;
                 case 'jpeg':
