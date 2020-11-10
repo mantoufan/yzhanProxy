@@ -137,7 +137,7 @@ class mtfBetter
         if (is_dir($CONF['cache_dir'])) {
             forEach(glob($CONF['cache_dir'] . '*.*') as $file) {
                 if (time() - filectime($file) > $CONF['cache_time']) {
-                    unlink($file);
+                    unlink($file); 
                 }
             }
         }
