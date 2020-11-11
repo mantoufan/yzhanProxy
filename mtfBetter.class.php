@@ -5,14 +5,14 @@ class mtfBetter
     public function __construct($arv = array())
     {
         if (!session_id()) session_start();
-		$CONF = include dirname(__FILE__) . '/conf.php';
+        $CONF = include dirname(__FILE__) . '/conf.php';
         forEach ($CONF as $k => $v) {
             if (!empty($arv[$k])) {
                 $CONF[$k] = $arv[$k];
             }
         }
         if (!is_dir($CONF['cache_dir'])) {
-            $this->cacheDir($CONF['cache_dir']);
+            $this->createDir($CONF['cache_dir']);
         }
         $this->CONF = $CONF;
     }
@@ -20,15 +20,15 @@ class mtfBetter
     public function handler($paths = array()) {       
         $CONF = $this->CONF;
         foreach($paths as $_p) {
-            if (is_file($_p)) {
-                $_i = pathinfo($_p);
+            if (is_file($_p['input'])) {
+                $_i = pathinfo($_p['output']);
                 $_i['extension'] = strtolower($_i['extension']);
                 switch ($_i['extension']) {
                     case 'jpeg':
                     case 'jpg':
                     case 'png':
                         // 创建文件缓存目录
-                        $this->cacheDir($_i['dirname']);
+                        $this->createDir($_i['dirname'], $CONF['cache_dir']);
                         // 图片压缩 + 水印
                         $_webp = '';
                         if (!empty($CONF['available_pic'])) {
@@ -36,18 +36,16 @@ class mtfBetter
                                 // 非PNG 或 PNG且PHP版本大于7.0.0 转Webp
                                 if ($_i['extension'] !== 'png' || version_compare(PHP_VERSION, '7.0.0') === 1) {
                                     $this->taskManager(1);
-                                    $_webp = $this->webp($_p);
+                                    $_webp = $this->webp($_p['input'], $_p['output']);
                                     $this->taskManager(0);
                                 }        
                             }
                         } 
                         if (!$_webp) {
                             $this->taskManager(1);
-                            $this->compressPic($_p);
+                            $this->compressPic($_p['input'], $_p['output']);
                             $this->taskManager(0);
                         }
-                    default:
-                        $this->cacheClear(1);
                 }
             }
         }
@@ -96,12 +94,11 @@ class mtfBetter
         imagepalettetotruecolor($image);
         return $image;
     }
-    public function webp($_p) {
+    public function webp($_p, $_p_new) {
         if (is_file($_p)) {
             $CONF = $this->CONF;
-            $_i = pathinfo($_p);
-            $_p_new = $CONF['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) .'.webp';
-            if (!is_file($_p_new)) {
+            $_p_new = $CONF['cache_dir'] . $_p_new;
+            if (!is_file($_p_new) || time() - filectime($_p_new) >= $CONF['cache_time']) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
@@ -112,16 +109,16 @@ class mtfBetter
         }
         return false;
     }
-    public function compressPic($_p) {
+    public function compressPic($_p, $_p_new) {
         if (is_file($_p)) {
             $CONF = $this->CONF;
-            $_i = pathinfo($_p);
-            $_i['extension'] = strtolower($_i['extension']);
-            $_p_new = $CONF['cache_dir']. md5($_i['dirname'] . '/' . $_i['filename']) . '.' . $_i['extension'];
-            if (!is_file($_p_new)) {
+            $_p_new = $CONF['cache_dir'] . $_p_new;
+            if (!is_file($_p_new) || time() - filectime($_p_new) >= $CONF['cache_time']) {
                 $image = imagecreatefromstring(file_get_contents($_p));
                 $image = $this->savealpha($image);
                 $image = $this->water($image);
+                $_i = pathinfo($_p);
+                $_i['extension'] = strtolower($_i['extension']);
                 $quality = $_i['extension'] === 'png' ? 7 : 75;
                 $im = 'image' . ($_i['extension'] === 'jpg' ? 'jpeg' : $_i['extension']);
                 $im($image, $_p_new, $quality);
@@ -131,28 +128,31 @@ class mtfBetter
         }
         return false;
     }
-    public function cacheClear($rand) {
-        if (rand(0, 100) > $rand) return;
-        $CONF = $this->CONF;
-        if (is_dir($CONF['cache_dir'])) {
-            forEach(glob($CONF['cache_dir'] . '*.*') as $file) {
-                if (time() - filectime($file) > $CONF['cache_time']) {
-                    unlink($file); 
-                }
-            }
+    public function removeDir($dir) {
+        $dh = opendir($dir);
+        while ($file = readdir($dh)) {
+           if($file !== '.' && $file !== '..') {
+              $p = $dir . '/' . $file;
+              if(!is_dir($p)) {
+                 unlink($p);
+              } else {
+                 $this->removeDir($p);
+              }
+           }
         }
-    }
-    public function cacheDir($_dirname) {
+        closedir($dh);
+        return rmdir($dir);
+     }
+    public function createDir($_dirname, $pre = '') {
         $CONF = $this->CONF;
         $dirs = explode('/', $_dirname);
         $p = array();
         foreach($dirs as $dir) {
-            $_p = $CONF['cache_dir'] . implode('/', $p);
-            echo $_p;
+            array_push($p, $dir);
+            $_p =  $pre . implode('/', $p);
             if (!is_dir($_p)) {
                 mkdir($_p);
             }
-            array_push($p, $dir);
         }
     }
     public function taskManager($add) {
@@ -168,35 +168,29 @@ class mtfBetter
     }
     public function replace($rules) {
         $rules = $this->wildcardPath($rules);
-        foreach($rules as $path => $rule) {
-            $path_bak = $path . '.bak';
-            $_c = file_get_contents($path);
-            if (!is_file($path_bak)) {
-                file_put_contents($path_bak, $_c);
+        foreach($rules as $path => $rule) {;
+            if (is_file($path)) {
+                file_put_contents($path, strtr(file_get_contents($path), $rule));
             }
-            file_put_contents($path, strtr($_c, $rule));
         }
     }
     public function restore($rules) {
         $rules = $this->wildcardPath($rules);
-        foreach($rules as $path => $rule) {
-            $path_bak = $path . '.bak';
-            if (is_file($path_bak)) {
-                if (copy($path_bak, $path)) {
-                    unlink($path_bak);
-                }
+        foreach($rules as $path => $rule) {;
+            if (is_file($path)) {
+                file_put_contents($path, strtr(file_get_contents($path), array_flip($rule)));
             }
         }
     }
     private function wildcardPath($rules) {
         foreach($rules as $path => $rule) {
             if (stripos($path, '*') !== FALSE) {
-                $a = explode('*');
-                $cur = glob($a[0].'/*');
+                $a = explode('*', $path);
+                $cur = glob($a[0] . '*');
                 if($cur){
                     foreach($cur as $f){
                         if(is_dir($f)){
-                            $rules[$f + '/' + $a[1]] = $rule;
+                            $rules[$f . '/' . $a[1]] = $rule;
                         }
                     }
                 }
