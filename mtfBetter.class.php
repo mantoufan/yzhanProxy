@@ -146,15 +146,19 @@ class mtfBetter
     public function createDir($_dirname, $pre = '') {
         $CONF = $this->CONF;
         $_dirs = explode('/', rtrim($_dirname, '/'));
-        $p = '';
+        $p = '';$f = true;
         $_dir_new = array();
         while(count($_dirs) > 0) {
             $_p =  $pre . implode('/', $_dirs);
             if (!is_dir($_p)) {
                 array_unshift($_dir_new, array_pop($_dirs));
             } else {
+                $f = false;
                 break;
             }
+        }
+        if ($f) {
+            $_p =  $pre . implode('/', $_dirs);
         }
         foreach($_dir_new as $dir) {
             $_p .= '/' . $dir;
