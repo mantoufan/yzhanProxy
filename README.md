@@ -16,18 +16,50 @@ Heal the world, make it a better place.
 
 此外，本类还提供常用功能：  
 1. 图片水印
+2. 批量文件内容替换
 
 ## 协议
 本类隶属于[mtfCOM](https://github.com/mantoufan/mtfCOM)通用组件库，与之采用相同协议开源
 
-## 配置
-您可以在参数区，以`查询字符串`方式传入参数，实现个性化配置：  
-- `path` - 静态文件相对于mtfBetter.php路径（开箱即用中，mtfBetter.php放到了根目录，默认就在根目录）  
-- `watermark_path` - 水印图片相对于mtfBetter.php的路径
-- `watermark_pos` - 水印图片的位置
-- `anti_stealing_link` - 图片防盗链
-- `cache_time` - 缓存时间
-- `task_num` - 队列数
+## 开箱即用
+```php
+include('mtfBetter.class.php');
+$mtfBetter = new mtfBetter($conf); // 配置
+$mtfBetter->handler($paths); // 要处理的文件路径列表
+```
+### 配置 · conf
+```php
+$conf = array(
+    'cache_dir' => 'cache', // 缓存文件夹路径 
+    'cache_time' => 3600, // 缓存时间 秒
+    'task_num' => 3, // 最大并发数，超过不处理
+    'available_pic' => true, // 开启图片转webp
+    'watermark_path' => 'water.png', // 图片水印路径
+    'watermark_pos' => '', // 图片水印位置，可选left-top / left-bottom / right-top / right-bottom
+    'rules'=> array(// 批量文件内容替换，支持 * 通配符
+        '/view/*/h.html' => array(
+            '1' => '2',// 将view/a/h.html,view/b/h.html...中的 1 换成 2
+        )
+    )
+);
+```
+### 文件列表 · paths
+除了`rules`声明要替换内容的文件外，您可以在`$paths`中传入文件列表  
+通常是 图片（jpg/jpeg/png）文件路径列表  
+类就会按照配置`conf`中的规则，批量压缩，转格式和加水印  
+处理后的文件会放到`cache_dir`中，缓存时间内，类将直接返回缓存  
+```php
+$path = array(
+    'static/pic/202011112129349625.png',// 图片将被压缩 或 webp 同时加水印
+    'static/pic/202011112129349626.png',// 对应{cache_dir}/static/pic/202011112129349626.png
+    'static/pic/202011112129349627.png', 
+)
+```
+**注意**类根据图片路径，在`cache_dir`中保留目录结构  
+便于编写`伪静态规则`，先判断`cache_dir`相应文件是否存在  
+在`cache_dir`不存在相应文件时，即插件尚未处理完成
+时，加载原文件  
+不同运行环境的伪静态规则的编写，您可以参考下方示例
 
 ## 第三方应用
 - shopXO加速优化插件
@@ -35,7 +67,7 @@ Heal the world, make it a better place.
 ![shopXO加速优化插件介绍](https://cdn.mantoufan.com/202011112129349627_c_w_600.png)
 ### 使用
 1. 进入shopXO后台，应用管理，上传`加速优化`插件
-2. 根据服务器运行环境，配置伪静态  
+2. 根据服务器运行环境，配置伪静态规则 
 - Apache · Kangle
 ```
 <IfModule mod_rewrite.c>
