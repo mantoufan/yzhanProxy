@@ -90,3 +90,31 @@ func TestLogOption(t *testing.T) {
 			t.Errorf("LogOption(\"debug\") = %v; want \"opt:debug\"", result)
 	}
 }
+
+func TestParseGlobal(t *testing.T) {
+	testCases := []struct {
+		name       string
+		globalStr  string
+		expected   GlobalType
+	}{
+		{
+			name:       "Default values",
+			globalStr:  "",
+			expected:   GlobalType{CertDir: "./cert", CacheDir: "./cache", CacheMaxSize: 100 * 1024 * 1024},
+		},
+		{
+			name:       "Custom values",
+			globalStr:  "cert_dir=/custom/cert&cache_dir=/custom/cache&cache_max_size=200",
+			expected:   GlobalType{CertDir: "/custom/cert", CacheDir: "/custom/cache", CacheMaxSize: 200 * 1024 * 1024},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ParseGlobal(tc.globalStr)
+			if result != tc.expected {
+				t.Errorf("Expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}
