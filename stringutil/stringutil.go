@@ -45,26 +45,26 @@ func LogOption(option string) string {
 }
 
 type OptionType struct {
-	redirect int
-	cacheTime map[string]time.Duration
+	Redirect int
+	CacheTime map[string]time.Duration
 }
 
 func ParseOption(option string) OptionType {
-	redirect, cacheTime := 0, map[string]time.Duration{}
+	Redirect, CacheTime := 0, map[string]time.Duration{}
 	optMap, err := url.ParseQuery(option)
 	if err != nil {
 		panic(err)
 	}
 	redirectStr := optMap.Get("redirect")
 	if redirectStr != "" {
-		redirect, err = strconv.Atoi(redirectStr)
+		Redirect, err = strconv.Atoi(redirectStr)
 		if err != nil {
 			panic(err)
 		}
 	}
 	if cacheExtStr := optMap.Get("cache_ext"); cacheExtStr != "" {
 		if cacheMaxAgeStr := optMap.Get("cache_max_age"); cacheMaxAgeStr != "" {
-			cacheExt, cacheMaxAge := strings.Split(cacheExtStr, ","), strings.Split(cacheMaxAgeStr, ",")
+			cacheExt, cacheMaxAge := strings.Split(cacheExtStr, "|"), strings.Split(cacheMaxAgeStr, "|")
 			cacheExtLen, cacheMaxAgeLen := len(cacheExt), len(cacheMaxAge)
 			if cacheMaxAgeLen < cacheExtLen {
 				for i := cacheMaxAgeLen - 1; i < cacheExtLen; i++ {
@@ -77,9 +77,39 @@ func ParseOption(option string) OptionType {
 				if err != nil {
 					panic(err)
 				}
-				cacheTime[ext] = time.Duration(cacheMaxAgeInt) * time.Second
+				CacheTime[ext] = time.Duration(cacheMaxAgeInt) * time.Second
 			}
 		}
 	}
-	return OptionType{redirect, cacheTime}
+	return OptionType{Redirect, CacheTime}
+}
+
+
+type GlobalType struct {
+	CertDir string
+	CacheDir string
+	CacheMaxSize int64
+}
+
+func ParseGlobal(globalStr string) GlobalType {
+	globalMap, err := url.ParseQuery(globalStr)
+	if err != nil {
+		panic(err)
+	}
+	certDir, cacheDir, cacheMaxSizeStr := globalMap.Get("cert_dir"), globalMap.Get("cache_dir"), globalMap.Get("cache_max_size")
+	if certDir == "" {
+		certDir = "./cert"
+	}
+	if cacheDir == "" {
+		cacheDir = "./cache"
+	}
+	var cacheMaxSize int64 = 100
+	if cacheMaxSizeStr != "" {
+		cacheMaxSize, err = strconv.ParseInt(cacheMaxSizeStr, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+	} 
+	cacheMaxSize *= 1024 * 1024
+	return GlobalType{certDir, cacheDir, cacheMaxSize}
 }

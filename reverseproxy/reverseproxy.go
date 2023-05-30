@@ -2,14 +2,20 @@ package reverseproxy
 import (
   "log"
   "strings"
+  "time"
   "crypto/tls"
   "net/url"
   "net/http"
   "net/http/httputil"
+  "net/http/httptest"
+  "path/filepath"
+  "crypto/md5"
+  "encoding/hex"
   "github.com/mantoufan/yzhanproxy/stringutil"
   "github.com/mantoufan/yzhanproxy/crtgen"
   "github.com/mantoufan/yzhanproxy/crtget"
   "github.com/mantoufan/yzhanproxy/netutil"
+  "github.com/mantoufan/yzhanproxy/filecache"
 )
 
 func NewProxy(destination string) (*httputil.ReverseProxy, error) {
@@ -38,26 +44,13 @@ func NewProxy(destination string) (*httputil.ReverseProxy, error) {
   return proxy, nil
 }
 
-func ProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-  return func(w http.ResponseWriter, r *http.Request) {
-    proxy.ServeHTTP(w, r)
-  }
-}
-
-func RedirectRequestHandler(url string, statusCode int) func(http.ResponseWriter, *http.Request) {
-  return func(w http.ResponseWriter, r *http.Request) {
-	  http.Redirect(w, r, url, statusCode)
-    log.Println("Redirect:", url)
-  }
-}
-
 type optionsType struct {
   destination string
   option stringutil.OptionType
 }
 
-func Listen(sourceStr string, destinationStr string, optionStr string) {
-  sources, destinations, options := strings.Split(sourceStr, ";"), strings.Split(destinationStr, ";"), strings.Split(optionStr, ";")
+func Listen(sourceStr string, destinationStr string, optionStr string, globalStr string) {
+  sources, destinations, options, global := strings.Split(sourceStr, ","), strings.Split(destinationStr, ","), strings.Split(optionStr, ","), stringutil.ParseGlobal(globalStr)
   sourcesLen, destinationsLen, optionsLen := len(sources), len(destinations), len(options)
   if sourcesLen != destinationsLen {
     log.Fatal("The total number of source addresses and destination addresses is not equal.")
@@ -69,6 +62,7 @@ func Listen(sourceStr string, destinationStr string, optionStr string) {
   }
   optionsMap := make(map[string]optionsType)
   muxMap := make(map[string]*http.ServeMux)
+  cache := filecache.NewFileCache(global.CacheDir, global.CacheMaxSize)
 	for i, source := range sources {
 		go func(source string, destination string, option string) {
       sourceParse, err := url.Parse(source)
@@ -95,28 +89,51 @@ func Listen(sourceStr string, destinationStr string, optionStr string) {
         if optionsExist == false {
           return
         }
-        _, option := options.destination, options.option
-        log.Println(option)
-        // redirect, cacheTime := option.redirect, option.cacheTime
-        // if redirect >= 300 && redirect < 400 {
-        //   http.Redirect(w, r, destination, redirect)
-        //   return
-        // }
-        // proxy, err := NewProxy(destination)
-        // if err != nil {
-        //   panic(err)
-        // }
-        // proxy.ServeHTTP(w, r)
+        destination, option := options.destination, options.option
+        Redirect, CacheTime := option.Redirect, option.CacheTime
+        if Redirect >= 300 && Redirect < 400 {
+          http.Redirect(w, r, destination, Redirect)
+          return
+        }
+
+        proxy, err := NewProxy(destination)
+        if err != nil {
+          panic(err)
+        }
+
+        ext := filepath.Ext(r.RequestURI)
+        if len(ext) > 1 {
+          cacheTimeSecond, cacheOK := CacheTime[ext[1:]]
+          if cacheOK == true {
+            hash := md5.Sum([]byte(source + "/" + r.RequestURI))
+            cacheKey := hex.EncodeToString(hash[:]) + ext
+            if response, ok := cache.Get(cacheKey); ok == true {
+              w.Write(response)
+              return
+            }
+            recorder := httptest.NewRecorder()
+            proxy.ServeHTTP(recorder, r)
+            responseBytes := recorder.Body.Bytes()
+            cache.Set(cacheKey, responseBytes, cacheTimeSecond * time.Second)
+            for k, v := range recorder.Header() {
+              w.Header()[k] = v
+            }
+            w.WriteHeader(recorder.Code)
+            w.Write(responseBytes)
+            return
+          }
+        }
+        proxy.ServeHTTP(w, r)
       })
       if scheme == "http" {
 			  log.Fatal(http.ListenAndServe(":" + port, mux))
       } else if scheme == "https" {
         if netutil.IsResolvedLocalIP(domain) {
-          crtPath, keyPath := "./certs/self-signed.crt", "./certs/self-signed.key"
+          crtPath, keyPath := global.CertDir + "/self-signed.crt", global.CertDir + "/self-signed.key"
           crtgen.Gen(crtPath, keyPath)
           log.Fatal(http.ListenAndServeTLS(":" + port, crtPath, keyPath, mux))
         } else {
-          manager := crtget.GetManager(domain, "./certs")
+          manager := crtget.GetManager(domain, global.CertDir)
           sever := &http.Server{
             Addr: ":" + port,
             TLSConfig: &tls.Config{
